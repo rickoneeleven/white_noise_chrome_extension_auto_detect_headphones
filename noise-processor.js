@@ -5,7 +5,13 @@ class BrownNoiseProcessor extends AudioWorkletProcessor {
     this.bufferSize = 96000;
     this.buffer = new Float32Array(this.bufferSize);
     this.index = 0;
+    this.sampleCount = 0;
+    this.regenInterval = 60 * 48000; // 60 seconds at 48kHz
 
+    this.generateBuffer();
+  }
+
+  generateBuffer() {
     // Generate deep brown noise - very slow integration for bass
     let lastOut = 0;
     for (let i = 0; i < this.bufferSize; i++) {
@@ -34,6 +40,14 @@ class BrownNoiseProcessor extends AudioWorkletProcessor {
       for (let i = 0; i < outputChannel.length; i++) {
         outputChannel[i] = this.buffer[this.index];
         this.index = (this.index + 1) % this.bufferSize;
+
+        // Regenerate buffer every 60 seconds
+        this.sampleCount++;
+        if (this.sampleCount >= this.regenInterval) {
+          this.generateBuffer();
+          this.sampleCount = 0;
+          this.index = 0;
+        }
       }
     }
     return true;
