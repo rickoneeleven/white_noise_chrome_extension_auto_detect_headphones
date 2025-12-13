@@ -32,6 +32,7 @@ Detect versions from: `.nvmrc`, `.tool-versions`, `package.json` engines, `pypro
 | Section | Content |
 |---------|---------|
 | Dev Commands | Test (all + single file), lint, build - exact commands |
+| Agent Notes | Any notes to help the agentic LLM coding agent perform thier duties |
 | Config | Required env vars, point to `.env.example` |
 | Deployment | Command or link to deploy script |
 | Links | Live docs, dashboards - no dead links |
@@ -70,6 +71,9 @@ npm run dev
 - `npm test -- path/to/file` - run single file
 - `npm run lint` - lint check
 - `npm run build` - production build
+
+## Dev Commands
+- You have passwordless sudo and authorisation to use it for service restart, or any other functions that require sudo
 
 ## Config
 Required env vars - see `.env.example` for full list:
@@ -113,6 +117,9 @@ npm --prefix backend run dev
 - `npm --prefix backend test -- path/to/file` - single file
 - `npm --prefix backend run build`
 - `npm --prefix frontend run build`
+
+## Dev Commands
+- You have passwordless sudo and authorisation to use it for service restart, or any other functions that require sudo
 
 ## Config
 See `backend/.env.example`. Required:
