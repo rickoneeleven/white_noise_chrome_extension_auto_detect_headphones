@@ -1,10 +1,28 @@
 class BrownNoiseProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
-    // Multiple integrators for deeper bass
-    this.b0 = 0;
-    this.b1 = 0;
-    this.b2 = 0;
+    // Pre-generate 2 seconds of very deep brown noise
+    this.bufferSize = 96000;
+    this.buffer = new Float32Array(this.bufferSize);
+    this.index = 0;
+
+    // Generate deep brown noise - very slow integration for bass
+    let lastOut = 0;
+    for (let i = 0; i < this.bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      // Slower integration = deeper/bassier
+      lastOut = (lastOut + (0.004 * white)) / 1.004;
+      this.buffer[i] = lastOut * 5.0;
+    }
+
+    // Crossfade ends for seamless loop (fade last 2000 samples)
+    const fadeLen = 2000;
+    for (let i = 0; i < fadeLen; i++) {
+      const fade = i / fadeLen;
+      const endIdx = this.bufferSize - fadeLen + i;
+      // Blend end into start
+      this.buffer[endIdx] = this.buffer[endIdx] * (1 - fade) + this.buffer[i] * fade;
+    }
   }
 
   process(inputs, outputs, parameters) {
@@ -14,22 +32,8 @@ class BrownNoiseProcessor extends AudioWorkletProcessor {
       const outputChannel = output[channel];
 
       for (let i = 0; i < outputChannel.length; i++) {
-        const white = Math.random() * 2 - 1;
-
-        // Deep rumble: cascaded integrators for very low frequency content
-        // First stage - heavy integration
-        this.b0 = (this.b0 + (0.01 * white)) / 1.01;
-
-        // Second stage - more integration for deeper bass
-        this.b1 = (this.b1 + (0.005 * this.b0)) / 1.005;
-
-        // Third stage - even deeper
-        this.b2 = (this.b2 + (0.003 * this.b1)) / 1.003;
-
-        // Mix stages: more weight on deeper stages
-        const mix = (this.b0 * 0.2) + (this.b1 * 0.4) + (this.b2 * 0.6);
-
-        outputChannel[i] = mix * 8.0; // Boost to compensate for low frequencies
+        outputChannel[i] = this.buffer[this.index];
+        this.index = (this.index + 1) % this.bufferSize;
       }
     }
     return true;

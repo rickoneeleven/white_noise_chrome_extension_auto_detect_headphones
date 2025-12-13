@@ -1,6 +1,10 @@
 let audioContext = null;
 let noiseNode = null;
 let gainNode = null;
+let lowpass1 = null;
+let lowpass2 = null;
+let bassBoost = null;
+let subBoost = null;
 let isPlaying = false;
 
 // Device tracking
@@ -13,14 +17,48 @@ async function startNoise(volume) {
   try {
     audioContext = new AudioContext();
 
+    // Resume if suspended (Chrome autoplay policy)
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
+
     // Load AudioWorklet module
     await audioContext.audioWorklet.addModule('noise-processor.js');
 
     noiseNode = new AudioWorkletNode(audioContext, 'brown-noise-processor');
+
+    // Two lowpass filters at 80Hz
+    lowpass1 = audioContext.createBiquadFilter();
+    lowpass1.type = 'lowpass';
+    lowpass1.frequency.value = 80;
+    lowpass1.Q.value = 0.5;
+
+    lowpass2 = audioContext.createBiquadFilter();
+    lowpass2.type = 'lowpass';
+    lowpass2.frequency.value = 80;
+    lowpass2.Q.value = 0.5;
+
+    // Bass boost at 50Hz
+    bassBoost = audioContext.createBiquadFilter();
+    bassBoost.type = 'lowshelf';
+    bassBoost.frequency.value = 50;
+    bassBoost.gain.value = 12;
+
+    // Sub boost at 25Hz
+    subBoost = audioContext.createBiquadFilter();
+    subBoost.type = 'lowshelf';
+    subBoost.frequency.value = 25;
+    subBoost.gain.value = 10;
+
     gainNode = audioContext.createGain();
     gainNode.gain.value = volume / 100;
 
-    noiseNode.connect(gainNode);
+    // Chain: noise -> lp1 -> lp2 -> bassBoost -> subBoost -> gain -> out
+    noiseNode.connect(lowpass1);
+    lowpass1.connect(lowpass2);
+    lowpass2.connect(bassBoost);
+    bassBoost.connect(subBoost);
+    subBoost.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
     isPlaying = true;
@@ -37,6 +75,22 @@ function stopNoise() {
     if (noiseNode) {
       noiseNode.disconnect();
       noiseNode = null;
+    }
+    if (lowpass1) {
+      lowpass1.disconnect();
+      lowpass1 = null;
+    }
+    if (lowpass2) {
+      lowpass2.disconnect();
+      lowpass2 = null;
+    }
+    if (bassBoost) {
+      bassBoost.disconnect();
+      bassBoost = null;
+    }
+    if (subBoost) {
+      subBoost.disconnect();
+      subBoost = null;
     }
     if (gainNode) {
       gainNode.disconnect();
