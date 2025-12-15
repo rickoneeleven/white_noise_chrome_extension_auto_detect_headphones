@@ -6,7 +6,7 @@ class BrownNoiseProcessor extends AudioWorkletProcessor {
     this.buffer = new Float32Array(this.bufferSize);
     this.index = 0;
     this.sampleCount = 0;
-    this.regenInterval = 60 * 48000; // 60 seconds at 48kHz
+    this.regenInterval = 300 * 48000; // 5 minutes at 48kHz
 
     this.generateBuffer();
   }
@@ -41,7 +41,7 @@ class BrownNoiseProcessor extends AudioWorkletProcessor {
         outputChannel[i] = this.buffer[this.index];
         this.index = (this.index + 1) % this.bufferSize;
 
-        // Regenerate buffer every 60 seconds
+        // Regenerate buffer every 5 minutes
         this.sampleCount++;
         if (this.sampleCount >= this.regenInterval) {
           this.generateBuffer();
